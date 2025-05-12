@@ -1,2 +1,7 @@
-# Install(require python 3.11.3)
-```pip install ttkbootsrap```
+# Install(environment:python 3.11.3)
+
+##Require library
+```
+pip install opencv-python ttkbootstrap pillow numpy
+
+```
