@@ -36,7 +36,7 @@ class Application:
         self.root = ttk.Window(themename="flatly")
         self.database = Database_Manager()
 
-        self.image_file =  filedialog.askopenfilename(title="イメージファイルを選択してください")
+        self.image_file =  filedialog.askopenfilename(title="イメージファイル(フロアマップ)を選択してください")
         print(f"指定されたファイル: {self.image_file}")
         self.image = Image_Processor(self.image_file)
         
