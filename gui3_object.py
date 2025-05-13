@@ -5,8 +5,10 @@ from PIL import Image, ImageTk,ImageOps
 import sqlite3
 import numpy as np
 import cv2
+import hashlib
+import os
 
-#TODO:SQLAlchemyの移行、地図ファイルの選択機能(ハッシュ値比較による整合性チェックの追加)、スクロールバーの追加(Textを利用？)、マップ上に点灯モーションの追加、探索機能の追加
+#TODO:SQLAlchemyの移行、スクロールバーの追加、マップ上に点灯モーションの追加、探索機能の追加
 
 class Database_Manager:
     def __init__(self):
@@ -37,7 +39,8 @@ class Application:
         self.database = Database_Manager()
 
         self.image_file =  filedialog.askopenfilename(title="イメージファイル(フロアマップ)を選択してください")
-        print(f"指定されたファイル: {self.image_file}")
+        self.integrity_check()
+
         self.image = Image_Processor(self.image_file)
         
         self.blocks = self.image.blocks
@@ -47,7 +50,7 @@ class Application:
         self.database.conn.close()
 
     def setup_tab(self):
-       self.root.title("ウィンドウ")
+       self.root.title("商品検索アプリ")
        self.root.geometry('1200x1000')
 
        self.notebook = ttk.Notebook(self.root)
@@ -104,7 +107,6 @@ class Application:
         self.canvas.bind("<Button-1>",self.canvas_clicked)
 
     def array_label_clear(self,label):
-        print(len(label))
         for target_label in label:
             target_label.destroy()
 
@@ -160,7 +162,6 @@ class Application:
             for item in search_result:
                 self.database.cursor.execute(f"SELECT * FROM shelf WHERE position = ?",(item[2],))
                 position_result = self.database.cursor.fetchall()
-                print(position_result)
                 if len(position_result) != 0:
                     self.image.edit_image(position_result[0][1])
                     self.create_canvas()
@@ -210,10 +211,42 @@ class Application:
         #pil_image = ImageOps.pad(pil_image,(800,800))
         self.tk_image = ImageTk.PhotoImage(pil_image)
         self.canvas.create_image(1152/2,720/2,image=self.tk_image)
+    
+    def integrity_check(self):
+        with open(self.image_file,'rb') as file:
+            filedata = file.read()
+            sha_256 = hashlib.sha256(filedata).hexdigest() #整合性の確認
+            print(f"指定されたファイル: {self.image_file},\nハッシュ値(SHA256):　　　　　{sha_256}")
+        try:
+            sha256_file = open('sha256_hash.txt',mode='r')
+            old_sha256 = sha256_file.read()
+            print(f"登録済みのハッシュ値(SHA256):{old_sha256}")
+            if old_sha256!= sha_256 and old_sha256 != None:
+                print("前回読み込んだファイルと異なるため終了します")
+                file.close()
+                sha256_file.close()
+                self.exit_window()
+        except:
+            sha256_file = open('sha256_hash.txt',mode='a')
+            sha256_file.write(str(sha_256))
+
+        file.close()
+        sha256_file.close()
+
+    def exit_window(self):
+        self.root.quit()
+        self.root.destroy()
+        self.database.conn.close()
+        exit()
 
 class Image_Processor:
     def __init__(self,image_file):
-        pil_image = Image.open(image_file).convert('RGB')  #cv2で対応できないファイルを読み込み
+        try:
+            pil_image = Image.open(image_file).convert('RGB')  #cv2で対応できないファイルを読み込み
+        except:
+            print("ファイルを正常に読み込めませんでした")
+            os.remove("sha256_hash.txt")
+            exit()
         self.image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
         self.image_file = image_file
         ##self.image = cv2.imread(image_file)
@@ -229,7 +262,6 @@ class Image_Processor:
             if contours[0][0][0] == x:
                 print("block:",contours[0][0][0])
                 break
-        print(len(contours))
         block = {0:contours}
         cv2.drawContours(self.image, list(block.values()), -1, (3, 0, 255), thickness=cv2.FILLED)
         cv2.imwrite(r'print_image.png', self.image)
@@ -241,10 +273,12 @@ class Image_Processor:
         mask = cv2.inRange(hsv_image,lower,upper)
         self.contours,hierarchy = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
         i=0
+        block_count = 1
         for contour in self.contours:
             if hierarchy[0][i][2] == -1:
                 self.blocks[i] = contour
-                print("ブロック：",contour[0])
+                print("[",block_count,"]","ブロック：",contour[0])
+                block_count = block_count + 1
             i=i+1
         print("認識されたブロック数：",len(self.blocks))
         return self.blocks
