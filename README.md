@@ -1,5 +1,3 @@
-# Install
-
 ## Install library(想定環境:Python 3.11.3)
 
 ```
@@ -19,12 +17,14 @@ self.GEMINI_API_KEY = "" #Gemini apiのtokenを指定(ダブルクォーテー�
 ## Run
 
 ```
-python3 gui3_object.py
+python3 app.py
 ```
 
 ## Note
 Gemini API(gemini-2.0-flash-lite)を利用しているため、1分間で登録するデータ数を30データ以内、一日で登録するデータ数を1500データ以内に抑えること
+
 csvファイルは一行目のヘッダ行に|name|position|を記載しておく必要があります(name:商品名、position:棚番号を想定)
+
 
 
 
