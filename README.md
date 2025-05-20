@@ -1,19 +1,23 @@
 # Install
 
 ## Install library(想定環境:Python 3.11.3)
+
 ```
 pip install opencv-python ttkbootstrap pillow numpy pandas google-generativeai
 
 ```
 ## Setup
 以下のURLを参照し、APIトークンを発行したうえで、Applicationクラス内のコンストラクタ(__init__関数)で定義されたself.GEMINI_API_KEYにAPIトークンを代入してください
+
 参照：https://ai.google.dev/gemini-api/docs/quickstart?hl=ja&lang=python
+
 ```
 self.GEMINI_API_KEY = "" #Gemini apiのtokenを指定(ダブルクォーテーション内に貼り付け)
         
 ```
 
 ## Run
+
 ```
 python3 gui3_object.py
 ```
